@@ -92,4 +92,54 @@ public class AccountService {
         return account.getBalance();
     }
 
+    // block account - called by fraud detection called via kafka
+
+    public void blockAccount(String accountNumber){
+        log.info("Blocking Account:{}",accountNumber);
+
+        Account account =accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(()->new RuntimeException("Account not Found"));
+
+        account.setAccountStatus(AccountStatus.BLOCKED);
+        accountRepository.save(account);
+        log.info("Account blocked:{}",accountNumber);
+    }
+
+    // deduct balance called by transaction service
+
+    public void deductBalance(String accountNumber,BigDecimal amount){
+        log.info("deducting Amount from:{}",accountNumber);
+
+        Account account =accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(()->new RuntimeException("Account not Found"));
+
+        if(account.getAccountStatus()!=AccountStatus.ACTIVE){
+            throw new RuntimeException("Account is not active"+accountNumber);
+        }
+
+        if(account.getBalance().compareTo(amount)<0){
+            throw new RuntimeException("Not enough funds for account"+accountNumber);
+        }
+        account.setBalance(account.getBalance().subtract(amount));
+        accountRepository.save(account);
+        log.info("Amount deducted from :{}",accountNumber);
+        log.info("Amount left is : {}",account.getBalance());
+    }
+
+
+    //credit balance called by transaction service
+
+    public void creditBalance(String accountNumber,BigDecimal amount){
+        log.info("Crediting to Account :{}",accountNumber);
+
+        Account account =accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(()->new RuntimeException("Account not Found"));
+
+        account.setBalance(account.getBalance().add(amount));
+        accountRepository.save(account);
+
+        log.info("Amount credited, new Balance id :{}",account.getBalance());
+
+    }
+
 }

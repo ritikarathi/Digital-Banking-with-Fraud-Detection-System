@@ -48,6 +48,4 @@ public class Transaction {
 
     private LocalDateTime completedAt;
 
-
-
 }
